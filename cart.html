@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>سبد خرید - فروشگاه دیجیتال</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Navbar -->
+        <nav class="navbar">
+            <a href="index.html" class="logo">
+                <i class="fas fa-laptop"></i> دیجی استور
+            </a>
+            <div class="nav-links">
+                <a href="nmn1.html">خانه</a>
+                <a href="nmn1.html">محصولات</a>
+                <a href="admin.html" target="_blank">پنل مدیریت</a>
+                <a href="chat.html" id="chat-link" target="_blank">پشتیبانی آنلاین</a>
+                <a href="support.html" target="_blank">پشتیبانی</a>
+                <a href="cart.html" id="cart-link" target="_blank">
+                    <i class="fas fa-shopping-cart"></i>
+                    سبد خرید (<span class="cart-count">0</span>)
+                </a>
+                <button id="theme-toggle" class="theme-btn">🌙/☀️</button>
+            </div>
+        </nav>
+
+        <!-- Cart Section -->
+        <main style="max-width: 1200px; margin: 40px auto; padding: 20px;">
+            <h1 class="page-title">سبد خرید شما</h1>
+            <div id="cart-items"></div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="script.js" defer></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof renderCartPage === 'function') renderCartPage();
+            if (typeof updateCartCount === 'function') updateCartCount();
+        });
+    </script>
+</body>
+</html>
