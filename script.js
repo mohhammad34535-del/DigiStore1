@@ -10,13 +10,74 @@ let products = JSON.parse(localStorage.getItem('myProducts')) || [
     { id: 4, name: "لپ‌تاپ ۱۴ اینچی ایسوس مدل ZenBook 14", price: 60000000, image: "4.jpg", desc: "لپ‌تاپ سبک و نازک برای حمل آسان", category: "لپ‌تاپ سبک", stock: 2 }
 ];
 
-// ذخیره اولیه در localStorage
 if (!localStorage.getItem('myProducts')) {
     localStorage.setItem('myProducts', JSON.stringify(products));
 }
 
 // سبد خرید
 let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+/* =======================
+   Login & Register Simulation
+======================= */
+
+let users = JSON.parse(localStorage.getItem('users')) || [];
+
+async function registerUser() {
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const msg = document.getElementById("msg");
+
+    if (!email || !password) {
+        msg.style.color = "red";
+        msg.innerText = "تمام فیلدها را پر کنید";
+        return;
+    }
+
+    if (users.find(u => u.email === email)) {
+        msg.style.color = "red";
+        msg.innerText = "این ایمیل قبلا ثبت شده";
+        return;
+    }
+
+    users.push({ email, password });
+    localStorage.setItem('users', JSON.stringify(users));
+    msg.style.color = "green";
+    msg.innerText = "ثبت‌نام موفق!";
+}
+
+async function loginUser() {
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const msg = document.getElementById("msg");
+
+    const user = users.find(u => u.email === email && u.password === password);
+    if (!user) {
+        msg.style.color = "red";
+        msg.innerText = "ایمیل یا رمز اشتباه است";
+        return;
+    }
+
+    localStorage.setItem('username', email);
+    msg.style.color = "green";
+    msg.innerText = "ورود موفق!";
+    setTimeout(() => window.location.href = "index.html", 500);
+}
+
+/* =======================
+   DOMContentLoaded
+======================= */
+
+document.addEventListener('DOMContentLoaded', () => {
+    updateCartCount();
+    if (document.getElementById('product-list')) renderProducts();
+    if (document.getElementById('cart-items')) renderCartPage();
+    if (document.getElementById('admin-product-list')) renderAdminProducts();
+
+    const userDisplay = document.getElementById('user-display');
+    const username = localStorage.getItem('username');
+    if (username && userDisplay) userDisplay.innerText = `سلام، ${username}`;
+});
 
 /* =======================
    Cart Utilities
@@ -28,27 +89,35 @@ function updateCartCount() {
 }
 
 /* =======================
-   Products Page (گالری)
+   Products Page
 ======================= */
 function renderProducts(items = products) {
     const container = document.getElementById('product-list');
     if (!container) return;
 
-    container.innerHTML = items.map(product => `
-        <div class="gallery-item">
+    container.innerHTML = ''; // پاک کردن قبلی
+
+    items.forEach(product => {
+        const div = document.createElement('div');
+        div.classList.add('gallery-item');
+
+        div.innerHTML = `
             <img src="${product.image}" alt="${product.name}">
-
-            <button class="main-btn add-cart-btn" onclick="addToCart(${product.id})">
-                افزودن به سبد خرید
-            </button>
-
+            <button class="main-btn buy-btn">افزودن به سبد خرید</button>
             <div class="gallery-caption">
                 <h3>${product.name}</h3>
                 <p>${product.price.toLocaleString()} تومان</p>
                 <p>${product.desc || ''}</p>
             </div>
-        </div>
-    `).join('');
+        `;
+
+        container.appendChild(div);
+
+        const buyBtn = div.querySelector('.buy-btn');
+        if (buyBtn) {
+            buyBtn.addEventListener('click', () => addToCart(product.id));
+        }
+    });
 }
 
 /* =======================
@@ -59,11 +128,8 @@ function addToCart(productId) {
     if (!product) return;
 
     const cartItem = cart.find(item => item.id === productId);
-    if (cartItem) {
-        cartItem.quantity += 1;
-    } else {
-        cart.push({ ...product, quantity: 1 });
-    }
+    if (cartItem) cartItem.quantity += 1;
+    else cart.push({ ...product, quantity: 1 });
 
     localStorage.setItem('cart', JSON.stringify(cart));
     updateCartCount();
@@ -78,7 +144,6 @@ function renderCartPage() {
     if (!container) return;
 
     container.innerHTML = '';
-
     if (cart.length === 0) {
         container.innerHTML = '<p style="text-align:center; color:white;">سبد خرید شما خالی است.</p>';
         return;
@@ -109,7 +174,6 @@ function renderCartPage() {
     });
 
     const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
     const totalDiv = document.createElement('div');
     totalDiv.style.cssText = 'margin-top:20px; border-top:2px solid #FFD700; padding-top:20px;';
     totalDiv.innerHTML = `
@@ -151,13 +215,13 @@ function goToCheckout() {
 }
 
 /* =======================
-   Admin Panel: Add/Edit Products
+   Admin Panel
 ======================= */
 function saveNewItem() {
     const n = document.getElementById('newName').value;
     const p = document.getElementById('newPrice').value;
     const d = document.getElementById('newDesc').value;
-    const f = document.getElementById('newImgFileName').value; // فقط نام فایل
+    const f = document.getElementById('newImgFileName').value;
 
     if (!n || !p || !f) {
         alert("تمام فیلدها را پر کنید");
@@ -165,18 +229,11 @@ function saveNewItem() {
     }
 
     products = JSON.parse(localStorage.getItem('myProducts')) || [];
-    products.push({
-        id: Date.now(),
-        name: n,
-        price: parseInt(p),
-        desc: d,
-        image: f // مسیر فایل واقعی
-    });
-
+    products.push({ id: Date.now(), name: n, price: parseInt(p), desc: d, image: f });
     localStorage.setItem('myProducts', JSON.stringify(products));
     alert("محصول ذخیره شد");
     renderAdminProducts();
-    renderProducts(); // برو تو صفحه اصلی
+    renderProducts();
     resetForm();
 }
 
@@ -186,7 +243,6 @@ function renderAdminProducts() {
 
     products = JSON.parse(localStorage.getItem('myProducts')) || [];
     list.innerHTML = '<h3>لیست محصولات</h3>';
-
     products.forEach((p, index) => {
         list.innerHTML += `
             <div class="product-card">
@@ -199,7 +255,6 @@ function renderAdminProducts() {
 }
 
 function deleteProduct(index) {
-    products = JSON.parse(localStorage.getItem('myProducts')) || [];
     products.splice(index, 1);
     localStorage.setItem('myProducts', JSON.stringify(products));
     renderAdminProducts();
@@ -207,13 +262,12 @@ function deleteProduct(index) {
 }
 
 function editProduct(index) {
-    products = JSON.parse(localStorage.getItem('myProducts')) || [];
     const product = products[index];
 
     document.getElementById('newName').value = product.name;
     document.getElementById('newPrice').value = product.price;
     document.getElementById('newDesc').value = product.desc;
-    document.getElementById('newImgFileName').value = product.image; // نام فایل
+    document.getElementById('newImgFileName').value = product.image;
 
     const saveBtn = document.getElementById('save-btn');
     const updateBtn = document.getElementById('update-btn');
@@ -235,9 +289,6 @@ function editProduct(index) {
     };
 }
 
-/* =======================
-   Form Utilities
-======================= */
 function resetForm() {
     ['newName','newPrice','newDesc','newImgFileName'].forEach(id => {
         const el = document.getElementById(id);
@@ -250,32 +301,22 @@ function resetForm() {
 }
 
 /* =======================
-   Init
+   Theme Toggle
 ======================= */
-document.addEventListener('DOMContentLoaded', () => {
-    updateCartCount();
-    if (document.getElementById('product-list')) renderProducts();
-    if (document.getElementById('cart-items')) renderCartPage();
-    if (document.getElementById('admin-product-list')) renderAdminProducts();
-});
-
 const themeBtn = document.getElementById('theme-toggle');
-
-// بررسی اینکه تم قبلی در localStorage ذخیره شده یا نه
 const savedTheme = localStorage.getItem('theme');
-if (savedTheme) {
-    document.body.classList.add(savedTheme);
-}
+if(savedTheme) document.body.classList.add(savedTheme);
 
-// عملکرد دکمه
-themeBtn.addEventListener('click', () => {
-    if (document.body.classList.contains('dark')) {
-        document.body.classList.remove('dark');
-        document.body.classList.add('light');
-        localStorage.setItem('theme', 'light');
-    } else {
-        document.body.classList.remove('light');
-        document.body.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
-    }
-});
+if(themeBtn){
+    themeBtn.addEventListener('click', () => {
+        if(document.body.classList.contains('dark')){
+            document.body.classList.remove('dark');
+            document.body.classList.add('light');
+            localStorage.setItem('theme','light');
+        } else {
+            document.body.classList.remove('light');
+            document.body.classList.add('dark');
+            localStorage.setItem('theme','dark');
+        }
+    });
+}
